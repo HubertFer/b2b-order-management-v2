@@ -24,7 +24,9 @@ This starts PostgreSQL, Kafka and the application on `http://localhost:8081`, wi
 | `11111111-1111-1111-1111-111111111111` | 10000.00 |
 | `22222222-2222-2222-2222-222222222222` | 500.00 |
 
-Health probes: `/actuator/health/liveness` and `/actuator/health/readiness`.
+- Swagger UI: `http://localhost:8081/swagger-ui/index.html` (examples use the demo partner `2222...`)
+- OpenAPI document: `http://localhost:8081/v3/api-docs`
+- Health probes: `/actuator/health/liveness` and `/actuator/health/readiness`
 
 ### Tests
 
