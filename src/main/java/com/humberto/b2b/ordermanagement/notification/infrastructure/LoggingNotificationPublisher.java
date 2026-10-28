@@ -4,9 +4,11 @@ import com.humberto.b2b.ordermanagement.notification.outbox.NotificationPublishe
 import com.humberto.b2b.ordermanagement.notification.outbox.OutboxMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(name = "notification.publisher", havingValue = "log", matchIfMissing = true)
 class LoggingNotificationPublisher implements NotificationPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingNotificationPublisher.class);
