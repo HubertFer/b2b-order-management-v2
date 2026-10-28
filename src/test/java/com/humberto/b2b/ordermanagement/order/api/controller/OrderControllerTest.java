@@ -136,6 +136,22 @@ class OrderControllerTest {
     }
 
     @Test
+    void rejectsUnknownFieldsNamingTheirPath() throws Exception {
+        UUID partnerId = insertPartner("100.00", "0");
+
+        postOrder("""
+                {"partnerId": "%s", "total": 1.00, "items": [{"productId": "%s", "quantity": 1, "unitPrice": 10.00}]}
+                """.formatted(partnerId, UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("total"));
+        postOrder("""
+                {"partnerId": "%s", "items": [{"productId": "%s", "quantity": 1, "unitPrice": 10.00, "discount": 5}]}
+                """.formatted(partnerId, UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("items[0].discount"));
+    }
+
+    @Test
     void searchesOrdersByStatusAndPeriod() throws Exception {
         UUID partnerId = insertPartner("100.00", "0");
         Instant from = Instant.now().truncatedTo(ChronoUnit.MILLIS);
