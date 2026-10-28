@@ -44,6 +44,21 @@ public final class Order {
                 OrderStatus.PENDENTE, createdAt, createdAt);
     }
 
+    public static Order restore(UUID id, UUID partnerId, List<OrderItem> items, BigDecimal total,
+                                OrderStatus status, Instant createdAt, Instant updatedAt) {
+        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(partnerId, "partnerId must not be null");
+        Objects.requireNonNull(items, "items must not be null");
+        Objects.requireNonNull(total, "total must not be null");
+        Objects.requireNonNull(status, "status must not be null");
+        Objects.requireNonNull(createdAt, "createdAt must not be null");
+        Objects.requireNonNull(updatedAt, "updatedAt must not be null");
+        if (items.isEmpty()) {
+            throw new IllegalArgumentException("items must not be empty");
+        }
+        return new Order(id, partnerId, List.copyOf(items), total, status, createdAt, updatedAt);
+    }
+
     public Order transitionTo(OrderStatus newStatus, Instant changedAt) {
         Objects.requireNonNull(newStatus, "newStatus must not be null");
         Objects.requireNonNull(changedAt, "changedAt must not be null");

@@ -111,6 +111,45 @@ class OrderTest {
         assertThrows(NullPointerException.class, () -> order.transitionTo(OrderStatus.APROVADO, null));
     }
 
+    @Test
+    void restoresOrderWithAllStoredValues() {
+        UUID id = UUID.randomUUID();
+        UUID partnerId = UUID.randomUUID();
+        Instant createdAt = Instant.parse("2026-10-15T12:00:00Z");
+        Instant updatedAt = createdAt.plusSeconds(120);
+        List<OrderItem> items = new ArrayList<>(List.of(new OrderItem(UUID.randomUUID(), 2, new BigDecimal("10.00"))));
+
+        Order order = Order.restore(id, partnerId, items, new BigDecimal("20.00"),
+                OrderStatus.EM_PROCESSAMENTO, createdAt, updatedAt);
+        items.clear();
+
+        assertEquals(id, order.id());
+        assertEquals(partnerId, order.partnerId());
+        assertEquals(1, order.items().size());
+        assertEquals(new BigDecimal("20.00"), order.total());
+        assertEquals(OrderStatus.EM_PROCESSAMENTO, order.status());
+        assertEquals(createdAt, order.createdAt());
+        assertEquals(updatedAt, order.updatedAt());
+        assertThrows(UnsupportedOperationException.class, () -> order.items().clear());
+    }
+
+    @Test
+    void rejectsInvalidRestoredValues() {
+        UUID id = UUID.randomUUID();
+        UUID partnerId = UUID.randomUUID();
+        List<OrderItem> items = List.of(new OrderItem(UUID.randomUUID(), 1, BigDecimal.ONE));
+        Instant now = Instant.parse("2026-10-15T12:00:00Z");
+
+        assertThrows(NullPointerException.class,
+                () -> Order.restore(null, partnerId, items, BigDecimal.ONE, OrderStatus.PENDENTE, now, now));
+        assertThrows(NullPointerException.class,
+                () -> Order.restore(id, partnerId, items, null, OrderStatus.PENDENTE, now, now));
+        assertThrows(NullPointerException.class,
+                () -> Order.restore(id, partnerId, items, BigDecimal.ONE, null, now, now));
+        assertThrows(IllegalArgumentException.class,
+                () -> Order.restore(id, partnerId, List.of(), BigDecimal.ONE, OrderStatus.PENDENTE, now, now));
+    }
+
     private static Order orderWithStatus(OrderStatus status, Instant createdAt) {
         Order order = Order.create(
                 UUID.randomUUID(),
