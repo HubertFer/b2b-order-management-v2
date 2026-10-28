@@ -4,6 +4,7 @@ import com.humberto.b2b.ordermanagement.order.application.port.out.PartnerCredit
 import com.humberto.b2b.ordermanagement.order.application.port.out.SaveOrderPort;
 import com.humberto.b2b.ordermanagement.order.domain.Order;
 import com.humberto.b2b.ordermanagement.order.domain.OrderItem;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -22,6 +23,7 @@ public class CreateOrderService {
         this.clock = clock;
     }
 
+    @Transactional
     public Order create(UUID partnerId, List<OrderItem> items) {
         BigDecimal availableCredit = partnerCreditPort.findAvailableCredit(partnerId)
                 .orElseThrow(() -> new PartnerNotFoundException(partnerId));
