@@ -44,6 +44,25 @@ public final class Order {
                 OrderStatus.PENDENTE, createdAt, createdAt);
     }
 
+    public Order transitionTo(OrderStatus newStatus, Instant changedAt) {
+        Objects.requireNonNull(newStatus, "newStatus must not be null");
+        Objects.requireNonNull(changedAt, "changedAt must not be null");
+        if (!isTransitionAllowed(newStatus)) {
+            throw new InvalidOrderTransitionException(status, newStatus);
+        }
+        return new Order(id, partnerId, items, total, newStatus, createdAt, changedAt);
+    }
+
+    private boolean isTransitionAllowed(OrderStatus newStatus) {
+        return switch (status) {
+            case PENDENTE -> newStatus == OrderStatus.APROVADO || newStatus == OrderStatus.CANCELADO;
+            case APROVADO -> newStatus == OrderStatus.EM_PROCESSAMENTO || newStatus == OrderStatus.CANCELADO;
+            case EM_PROCESSAMENTO -> newStatus == OrderStatus.ENVIADO || newStatus == OrderStatus.CANCELADO;
+            case ENVIADO -> newStatus == OrderStatus.ENTREGUE;
+            case ENTREGUE, CANCELADO -> false;
+        };
+    }
+
     public UUID id() {
         return id;
     }

@@ -12,6 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+
 class OrderTest {
 
     @Test
@@ -55,5 +60,76 @@ class OrderTest {
         assertThrows(IllegalArgumentException.class, () -> Order.create(partnerId, List.of(), createdAt));
         assertThrows(NullPointerException.class, () -> Order.create(null, items, createdAt));
         assertThrows(NullPointerException.class, () -> Order.create(partnerId, null, createdAt));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "PENDENTE, APROVADO",
+            "PENDENTE, CANCELADO",
+            "APROVADO, EM_PROCESSAMENTO",
+            "APROVADO, CANCELADO",
+            "EM_PROCESSAMENTO, ENVIADO",
+            "EM_PROCESSAMENTO, CANCELADO",
+            "ENVIADO, ENTREGUE"
+    })
+    void allowsValidTransitionsWithoutChangingOriginal(OrderStatus from, OrderStatus to) {
+        Instant createdAt = Instant.parse("2026-10-15T12:00:00Z");
+        Instant changedAt = createdAt.plusSeconds(60);
+        Order original = orderWithStatus(from, createdAt);
+
+        Order updated = original.transitionTo(to, changedAt);
+
+        assertNotSame(original, updated);
+        assertEquals(from, original.status());
+        assertEquals(createdAt, original.updatedAt());
+        assertEquals(to, updated.status());
+        assertEquals(createdAt, updated.createdAt());
+        assertEquals(changedAt, updated.updatedAt());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "PENDENTE, PENDENTE",
+            "PENDENTE, EM_PROCESSAMENTO",
+            "APROVADO, ENVIADO",
+            "ENVIADO, CANCELADO",
+            "ENTREGUE, CANCELADO",
+            "CANCELADO, PENDENTE"
+    })
+    void rejectsInvalidTransitions(OrderStatus from, OrderStatus to) {
+        Instant timestamp = Instant.parse("2026-10-15T12:00:00Z");
+        Order order = orderWithStatus(from, timestamp);
+
+        assertThrows(InvalidOrderTransitionException.class, () -> order.transitionTo(to, timestamp));
+    }
+
+    @Test
+    void rejectsNullTransitionArguments() {
+        Order order = orderWithStatus(OrderStatus.PENDENTE, Instant.parse("2026-10-15T12:00:00Z"));
+
+        assertThrows(NullPointerException.class, () -> order.transitionTo(null, Instant.now()));
+        assertThrows(NullPointerException.class, () -> order.transitionTo(OrderStatus.APROVADO, null));
+    }
+
+    private static Order orderWithStatus(OrderStatus status, Instant createdAt) {
+        Order order = Order.create(
+                UUID.randomUUID(),
+                List.of(new OrderItem(UUID.randomUUID(), 1, BigDecimal.ONE)),
+                createdAt
+        );
+        return switch (status) {
+            case PENDENTE -> order;
+            case APROVADO -> order.transitionTo(OrderStatus.APROVADO, createdAt);
+            case EM_PROCESSAMENTO -> order.transitionTo(OrderStatus.APROVADO, createdAt)
+                    .transitionTo(OrderStatus.EM_PROCESSAMENTO, createdAt);
+            case ENVIADO -> order.transitionTo(OrderStatus.APROVADO, createdAt)
+                    .transitionTo(OrderStatus.EM_PROCESSAMENTO, createdAt)
+                    .transitionTo(OrderStatus.ENVIADO, createdAt);
+            case ENTREGUE -> order.transitionTo(OrderStatus.APROVADO, createdAt)
+                    .transitionTo(OrderStatus.EM_PROCESSAMENTO, createdAt)
+                    .transitionTo(OrderStatus.ENVIADO, createdAt)
+                    .transitionTo(OrderStatus.ENTREGUE, createdAt);
+            case CANCELADO -> order.transitionTo(OrderStatus.CANCELADO, createdAt);
+        };
     }
 }
