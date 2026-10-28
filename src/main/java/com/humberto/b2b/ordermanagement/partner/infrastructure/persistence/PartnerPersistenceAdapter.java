@@ -2,6 +2,9 @@ package com.humberto.b2b.ordermanagement.partner.infrastructure.persistence;
 
 import com.humberto.b2b.ordermanagement.order.application.port.out.DebitPartnerCreditPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.PartnerCreditPort;
+import com.humberto.b2b.ordermanagement.partner.application.port.out.LoadPartnerPort;
+import com.humberto.b2b.ordermanagement.partner.application.port.out.SavePartnerPort;
+import com.humberto.b2b.ordermanagement.partner.domain.Partner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
-class PartnerPersistenceAdapter implements PartnerCreditPort, DebitPartnerCreditPort {
+class PartnerPersistenceAdapter implements PartnerCreditPort, DebitPartnerCreditPort, LoadPartnerPort, SavePartnerPort {
 
     private final PartnerJpaRepository repository;
 
@@ -34,5 +37,17 @@ class PartnerPersistenceAdapter implements PartnerCreditPort, DebitPartnerCredit
             throw new IllegalArgumentException("amount must be greater than zero");
         }
         return repository.debitIfAvailable(partnerId, amount) == 1;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Partner> findById(UUID partnerId) {
+        return repository.findById(partnerId).map(PartnerEntity::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public Partner save(Partner partner) {
+        return repository.save(PartnerEntity.fromDomain(partner)).toDomain();
     }
 }
