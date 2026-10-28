@@ -217,6 +217,50 @@ class OrderControllerTest {
         patchStatus(UUID.randomUUID().toString(), "ENVIADO").andExpect(status().isNotFound());
     }
 
+    @Test
+    void replaysOrderForRepeatedIdempotencyKey() throws Exception {
+        String json = orderJson(insertPartner("100.00", "0"), 1, "10.00");
+
+        String firstId = JsonPath.read(postOrder(json, "order-001")
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString(), "$.id");
+
+        postOrder(json, "order-001")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(firstId));
+    }
+
+    @Test
+    void rejectsIdempotencyKeyReusedWithDifferentRequest() throws Exception {
+        UUID partnerId = insertPartner("100.00", "0");
+        postOrder(orderJson(partnerId, 1, "10.00"), "order-002").andExpect(status().isCreated());
+
+        postOrder(orderJson(partnerId, 2, "10.00"), "order-002")
+                .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
+    void scopesIdempotencyKeyByPartner() throws Exception {
+        postOrder(orderJson(insertPartner("100.00", "0"), 1, "10.00"), "shared-key").andExpect(status().isCreated());
+
+        postOrder(orderJson(insertPartner("100.00", "0"), 1, "10.00"), "shared-key").andExpect(status().isCreated());
+    }
+
+    @Test
+    void rejectsInvalidIdempotencyKey() throws Exception {
+        String json = orderJson(insertPartner("100.00", "0"), 1, "10.00");
+
+        postOrder(json, "has space").andExpect(status().isBadRequest());
+        postOrder(json, "x".repeat(101)).andExpect(status().isBadRequest());
+    }
+
+    private ResultActions postOrder(String json, String idempotencyKey) throws Exception {
+        return mockMvc.perform(post("/orders")
+                .header("Idempotency-Key", idempotencyKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json));
+    }
+
     private ResultActions patchStatus(String orderId, String status) throws Exception {
         return mockMvc.perform(patch("/orders/{id}/status", orderId)
                 .contentType(MediaType.APPLICATION_JSON)

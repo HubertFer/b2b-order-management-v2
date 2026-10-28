@@ -9,6 +9,7 @@ import com.humberto.b2b.ordermanagement.order.application.CancelOrderService;
 import com.humberto.b2b.ordermanagement.order.application.ChangeOrderStatusService;
 import com.humberto.b2b.ordermanagement.order.application.CreateOrderService;
 import com.humberto.b2b.ordermanagement.order.application.GetOrderService;
+import com.humberto.b2b.ordermanagement.order.application.OrderCreation;
 import com.humberto.b2b.ordermanagement.order.application.OrderSearchCriteria;
 import com.humberto.b2b.ordermanagement.order.application.SearchOrdersService;
 import com.humberto.b2b.ordermanagement.order.domain.Order;
@@ -16,12 +17,15 @@ import com.humberto.b2b.ordermanagement.order.domain.OrderStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,13 +61,19 @@ public class OrderController {
     }
 
     @PostMapping
-    ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request) {
-        Order order = createOrderService.create(request.partnerId(), request.toDomainItems());
+    ResponseEntity<OrderResponse> create(
+            @RequestHeader(name = "Idempotency-Key", required = false)
+            @Size(min = 1, max = 100) @Pattern(regexp = "[\\x21-\\x7E]+") String idempotencyKey,
+            @Valid @RequestBody CreateOrderRequest request) {
+        OrderCreation creation = createOrderService.create(request.partnerId(), request.toDomainItems(), idempotencyKey);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(order.id())
+                .buildAndExpand(creation.order().id())
                 .toUri();
-        return ResponseEntity.created(location).body(OrderResponse.from(order));
+        ResponseEntity.BodyBuilder response = creation.replayed()
+                ? ResponseEntity.ok().location(location)
+                : ResponseEntity.created(location);
+        return response.body(OrderResponse.from(creation.order()));
     }
 
     @GetMapping
