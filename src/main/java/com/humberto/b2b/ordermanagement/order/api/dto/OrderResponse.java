@@ -1,4 +1,4 @@
-package com.humberto.b2b.ordermanagement.order.api;
+package com.humberto.b2b.ordermanagement.order.api.dto;
 
 import com.humberto.b2b.ordermanagement.order.domain.Order;
 import com.humberto.b2b.ordermanagement.order.domain.OrderStatus;
@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-record OrderResponse(
+public record OrderResponse(
         UUID id,
         UUID partnerId,
         List<OrderItemResponse> items,
@@ -19,7 +19,7 @@ record OrderResponse(
         Instant updatedAt
 ) {
 
-    static OrderResponse from(Order order) {
+    public static OrderResponse from(Order order) {
         return new OrderResponse(
                 order.id(),
                 order.partnerId(),

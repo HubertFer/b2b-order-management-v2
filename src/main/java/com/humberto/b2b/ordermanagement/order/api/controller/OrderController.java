@@ -1,5 +1,7 @@
-package com.humberto.b2b.ordermanagement.order.api;
+package com.humberto.b2b.ordermanagement.order.api.controller;
 
+import com.humberto.b2b.ordermanagement.order.api.dto.CreateOrderRequest;
+import com.humberto.b2b.ordermanagement.order.api.dto.OrderResponse;
 import com.humberto.b2b.ordermanagement.order.application.ApproveOrderService;
 import com.humberto.b2b.ordermanagement.order.application.CreateOrderService;
 import com.humberto.b2b.ordermanagement.order.application.GetOrderService;
@@ -19,7 +21,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/orders")
-class OrderController {
+public class OrderController {
 
     private final CreateOrderService createOrderService;
     private final GetOrderService getOrderService;

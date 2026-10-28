@@ -1,4 +1,4 @@
-package com.humberto.b2b.ordermanagement.order.api;
+package com.humberto.b2b.ordermanagement.order.api.dto;
 
 import com.humberto.b2b.ordermanagement.order.domain.OrderItem;
 import jakarta.validation.constraints.Digits;
@@ -10,13 +10,13 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-record OrderItemRequest(
+public record OrderItemRequest(
         @NotNull UUID productId,
         @NotNull @Positive @Max(1_000_000) Integer quantity,
         @NotNull @PositiveOrZero @Digits(integer = 17, fraction = 2) BigDecimal unitPrice
 ) {
 
-    OrderItem toDomain() {
+    public OrderItem toDomain() {
         return new OrderItem(productId, quantity, unitPrice);
     }
 }

@@ -1,4 +1,4 @@
-package com.humberto.b2b.ordermanagement.order.api;
+package com.humberto.b2b.ordermanagement.order.api.controller;
 
 import com.humberto.b2b.ordermanagement.TestcontainersConfiguration;
 import com.jayway.jsonpath.JsonPath;
