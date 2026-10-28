@@ -22,4 +22,13 @@ interface PartnerJpaRepository extends JpaRepository<PartnerEntity, UUID> {
                and p.creditLimit - p.usedCredit >= :amount
             """)
     int debitIfAvailable(@Param("id") UUID id, @Param("amount") BigDecimal amount);
+
+    @Modifying
+    @Query("""
+            update PartnerEntity p
+               set p.usedCredit = p.usedCredit - :amount
+             where p.id = :id
+               and p.usedCredit >= :amount
+            """)
+    int refund(@Param("id") UUID id, @Param("amount") BigDecimal amount);
 }

@@ -150,6 +150,19 @@ class OrderTest {
                 () -> Order.restore(id, partnerId, List.of(), BigDecimal.ONE, OrderStatus.PENDENTE, now, now));
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "PENDENTE, false",
+            "APROVADO, true",
+            "EM_PROCESSAMENTO, true",
+            "ENVIADO, true",
+            "ENTREGUE, true",
+            "CANCELADO, false"
+    })
+    void knowsWhetherItsTotalIsDebitedFromPartnerCredit(OrderStatus status, boolean debited) {
+        assertEquals(debited, orderWithStatus(status, Instant.parse("2026-10-15T12:00:00Z")).hasDebitedCredit());
+    }
+
     private static Order orderWithStatus(OrderStatus status, Instant createdAt) {
         Order order = Order.create(
                 UUID.randomUUID(),

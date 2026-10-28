@@ -68,6 +68,13 @@ public final class Order {
         return new Order(id, partnerId, items, total, newStatus, createdAt, changedAt);
     }
 
+    public boolean hasDebitedCredit() {
+        return switch (status) {
+            case APROVADO, EM_PROCESSAMENTO, ENVIADO, ENTREGUE -> true;
+            case PENDENTE, CANCELADO -> false;
+        };
+    }
+
     private boolean isTransitionAllowed(OrderStatus newStatus) {
         return switch (status) {
             case PENDENTE -> newStatus == OrderStatus.APROVADO || newStatus == OrderStatus.CANCELADO;

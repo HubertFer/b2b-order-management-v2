@@ -2,6 +2,7 @@ package com.humberto.b2b.ordermanagement.partner.infrastructure.persistence;
 
 import com.humberto.b2b.ordermanagement.order.application.port.out.DebitPartnerCreditPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.PartnerCreditPort;
+import com.humberto.b2b.ordermanagement.order.application.port.out.RefundPartnerCreditPort;
 import com.humberto.b2b.ordermanagement.partner.application.port.out.LoadPartnerPort;
 import com.humberto.b2b.ordermanagement.partner.application.port.out.SavePartnerPort;
 import com.humberto.b2b.ordermanagement.partner.domain.Partner;
@@ -14,7 +15,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
-class PartnerPersistenceAdapter implements PartnerCreditPort, DebitPartnerCreditPort, LoadPartnerPort, SavePartnerPort {
+class PartnerPersistenceAdapter
+        implements PartnerCreditPort, DebitPartnerCreditPort, RefundPartnerCreditPort, LoadPartnerPort, SavePartnerPort {
 
     private final PartnerJpaRepository repository;
 
@@ -31,12 +33,17 @@ class PartnerPersistenceAdapter implements PartnerCreditPort, DebitPartnerCredit
     @Override
     @Transactional
     public boolean debitIfAvailable(UUID partnerId, BigDecimal amount) {
-        Objects.requireNonNull(partnerId, "partnerId must not be null");
-        Objects.requireNonNull(amount, "amount must not be null");
-        if (amount.signum() <= 0) {
-            throw new IllegalArgumentException("amount must be greater than zero");
-        }
+        requirePositive(partnerId, amount);
         return repository.debitIfAvailable(partnerId, amount) == 1;
+    }
+
+    @Override
+    @Transactional
+    public void refund(UUID partnerId, BigDecimal amount) {
+        requirePositive(partnerId, amount);
+        if (repository.refund(partnerId, amount) != 1) {
+            throw new IllegalStateException("Could not refund " + amount + " to partner " + partnerId);
+        }
     }
 
     @Override
@@ -49,5 +56,13 @@ class PartnerPersistenceAdapter implements PartnerCreditPort, DebitPartnerCredit
     @Transactional
     public Partner save(Partner partner) {
         return repository.save(PartnerEntity.fromDomain(partner)).toDomain();
+    }
+
+    private static void requirePositive(UUID partnerId, BigDecimal amount) {
+        Objects.requireNonNull(partnerId, "partnerId must not be null");
+        Objects.requireNonNull(amount, "amount must not be null");
+        if (amount.signum() <= 0) {
+            throw new IllegalArgumentException("amount must be greater than zero");
+        }
     }
 }

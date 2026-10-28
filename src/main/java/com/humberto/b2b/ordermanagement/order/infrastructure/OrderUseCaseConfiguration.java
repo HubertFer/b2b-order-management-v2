@@ -1,6 +1,8 @@
 package com.humberto.b2b.ordermanagement.order.infrastructure;
 
 import com.humberto.b2b.ordermanagement.order.application.ApproveOrderService;
+import com.humberto.b2b.ordermanagement.order.application.CancelOrderService;
+import com.humberto.b2b.ordermanagement.order.application.ChangeOrderStatusService;
 import com.humberto.b2b.ordermanagement.order.application.CreateOrderService;
 import com.humberto.b2b.ordermanagement.order.application.GetOrderService;
 import com.humberto.b2b.ordermanagement.order.application.SearchOrdersService;
@@ -8,6 +10,7 @@ import com.humberto.b2b.ordermanagement.order.application.port.out.DebitPartnerC
 import com.humberto.b2b.ordermanagement.order.application.port.out.FindOrderForUpdatePort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.FindOrderPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.PartnerCreditPort;
+import com.humberto.b2b.ordermanagement.order.application.port.out.RefundPartnerCreditPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.SaveOrderPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.SearchOrdersPort;
 import org.springframework.context.annotation.Bean;
@@ -46,5 +49,20 @@ class OrderUseCaseConfiguration {
                                             Clock clock) {
         return new ApproveOrderService(findOrderForUpdatePort, debitPartnerCreditPort, partnerCreditPort,
                 saveOrderPort, clock);
+    }
+
+    @Bean
+    CancelOrderService cancelOrderService(FindOrderForUpdatePort findOrderForUpdatePort,
+                                          RefundPartnerCreditPort refundPartnerCreditPort,
+                                          SaveOrderPort saveOrderPort,
+                                          Clock clock) {
+        return new CancelOrderService(findOrderForUpdatePort, refundPartnerCreditPort, saveOrderPort, clock);
+    }
+
+    @Bean
+    ChangeOrderStatusService changeOrderStatusService(FindOrderForUpdatePort findOrderForUpdatePort,
+                                                      SaveOrderPort saveOrderPort,
+                                                      Clock clock) {
+        return new ChangeOrderStatusService(findOrderForUpdatePort, saveOrderPort, clock);
     }
 }

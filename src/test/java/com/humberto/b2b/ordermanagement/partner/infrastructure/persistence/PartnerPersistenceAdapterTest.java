@@ -64,6 +64,24 @@ class PartnerPersistenceAdapterTest {
         assertThrows(IllegalArgumentException.class, () -> adapter.debitIfAvailable(partnerId, BigDecimal.ZERO));
     }
 
+    @Test
+    void refundsUsedCredit() {
+        UUID partnerId = insertPartner("100.00", "70.00");
+
+        adapter.refund(partnerId, new BigDecimal("30.00"));
+
+        assertEquals(new BigDecimal("40.00"), usedCredit(partnerId));
+    }
+
+    @Test
+    void refusesRefundAboveUsedCreditOrForUnknownPartner() {
+        UUID partnerId = insertPartner("100.00", "20.00");
+
+        assertThrows(IllegalStateException.class, () -> adapter.refund(partnerId, new BigDecimal("20.01")));
+        assertThrows(IllegalStateException.class, () -> adapter.refund(UUID.randomUUID(), BigDecimal.ONE));
+        assertEquals(new BigDecimal("20.00"), usedCredit(partnerId));
+    }
+
     private UUID insertPartner(String creditLimit, String usedCredit) {
         UUID id = UUID.randomUUID();
         jdbcTemplate.update("INSERT INTO partner (id, credit_limit, used_credit) VALUES (?, ?, ?)",

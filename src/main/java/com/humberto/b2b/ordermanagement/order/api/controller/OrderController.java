@@ -1,9 +1,12 @@
 package com.humberto.b2b.ordermanagement.order.api.controller;
 
+import com.humberto.b2b.ordermanagement.order.api.dto.ChangeOrderStatusRequest;
 import com.humberto.b2b.ordermanagement.order.api.dto.CreateOrderRequest;
 import com.humberto.b2b.ordermanagement.order.api.dto.OrderPageResponse;
 import com.humberto.b2b.ordermanagement.order.api.dto.OrderResponse;
 import com.humberto.b2b.ordermanagement.order.application.ApproveOrderService;
+import com.humberto.b2b.ordermanagement.order.application.CancelOrderService;
+import com.humberto.b2b.ordermanagement.order.application.ChangeOrderStatusService;
 import com.humberto.b2b.ordermanagement.order.application.CreateOrderService;
 import com.humberto.b2b.ordermanagement.order.application.GetOrderService;
 import com.humberto.b2b.ordermanagement.order.application.OrderSearchCriteria;
@@ -15,6 +18,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,15 +39,21 @@ public class OrderController {
     private final GetOrderService getOrderService;
     private final SearchOrdersService searchOrdersService;
     private final ApproveOrderService approveOrderService;
+    private final CancelOrderService cancelOrderService;
+    private final ChangeOrderStatusService changeOrderStatusService;
 
     OrderController(CreateOrderService createOrderService,
                     GetOrderService getOrderService,
                     SearchOrdersService searchOrdersService,
-                    ApproveOrderService approveOrderService) {
+                    ApproveOrderService approveOrderService,
+                    CancelOrderService cancelOrderService,
+                    ChangeOrderStatusService changeOrderStatusService) {
         this.createOrderService = createOrderService;
         this.getOrderService = getOrderService;
         this.searchOrdersService = searchOrdersService;
         this.approveOrderService = approveOrderService;
+        this.cancelOrderService = cancelOrderService;
+        this.changeOrderStatusService = changeOrderStatusService;
     }
 
     @PostMapping
@@ -74,5 +84,20 @@ public class OrderController {
     @PostMapping("/{id}/approve")
     OrderResponse approve(@PathVariable UUID id) {
         return OrderResponse.from(approveOrderService.approve(id));
+    }
+
+    @PostMapping("/{id}/cancel")
+    OrderResponse cancel(@PathVariable UUID id) {
+        return OrderResponse.from(cancelOrderService.cancel(id));
+    }
+
+    @PatchMapping("/{id}/status")
+    OrderResponse changeStatus(@PathVariable UUID id, @Valid @RequestBody ChangeOrderStatusRequest request) {
+        Order order = switch (request.status()) {
+            case APROVADO -> approveOrderService.approve(id);
+            case CANCELADO -> cancelOrderService.cancel(id);
+            default -> changeOrderStatusService.changeStatus(id, request.status());
+        };
+        return OrderResponse.from(order);
     }
 }
