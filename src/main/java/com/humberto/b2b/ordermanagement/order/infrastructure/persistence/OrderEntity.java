@@ -14,6 +14,7 @@ import jakarta.persistence.PostLoad;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import org.hibernate.annotations.BatchSize;
 import org.springframework.data.domain.Persistable;
 
 import java.math.BigDecimal;
@@ -33,6 +34,7 @@ public class OrderEntity implements Persistable<UUID> {
     private UUID partnerId;
 
     @ElementCollection
+    @BatchSize(size = 100)
     @CollectionTable(name = "order_item", joinColumns = @JoinColumn(name = "order_id"))
     private List<OrderItemEmbeddable> items = new ArrayList<>();
 

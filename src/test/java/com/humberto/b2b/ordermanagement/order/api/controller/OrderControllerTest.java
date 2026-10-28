@@ -14,6 +14,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -130,6 +132,39 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.errors.length()").value(2))
                 .andExpect(jsonPath("$.errors[?(@.field == 'items[0].quantity')]").exists())
                 .andExpect(jsonPath("$.errors[?(@.field == 'items[0].unitPrice')]").exists());
+    }
+
+    @Test
+    void searchesOrdersByStatusAndPeriod() throws Exception {
+        UUID partnerId = insertPartner("100.00", "0");
+        Instant from = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        String approvedId = createOrder(partnerId, 1, "10.00");
+        createOrder(partnerId, 1, "20.00");
+        mockMvc.perform(post("/orders/{id}/approve", approvedId)).andExpect(status().isOk());
+        Instant to = Instant.now().plusSeconds(1);
+
+        mockMvc.perform(get("/orders")
+                        .param("status", "APROVADO")
+                        .param("createdFrom", from.toString())
+                        .param("createdTo", to.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(approvedId))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20));
+    }
+
+    @Test
+    void rejectsInvalidSearchParameters() throws Exception {
+        mockMvc.perform(get("/orders").param("size", "101"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/orders").param("status", "DESCONHECIDO"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/orders")
+                        .param("createdFrom", "2026-10-15T12:00:00Z")
+                        .param("createdTo", "2026-10-15T12:00:00Z"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("createdFrom must be before createdTo"));
     }
 
     private ResultActions postOrder(String json) throws Exception {

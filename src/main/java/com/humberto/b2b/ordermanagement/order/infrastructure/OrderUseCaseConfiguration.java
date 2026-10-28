@@ -3,11 +3,13 @@ package com.humberto.b2b.ordermanagement.order.infrastructure;
 import com.humberto.b2b.ordermanagement.order.application.ApproveOrderService;
 import com.humberto.b2b.ordermanagement.order.application.CreateOrderService;
 import com.humberto.b2b.ordermanagement.order.application.GetOrderService;
+import com.humberto.b2b.ordermanagement.order.application.SearchOrdersService;
 import com.humberto.b2b.ordermanagement.order.application.port.out.DebitPartnerCreditPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.FindOrderForUpdatePort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.FindOrderPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.PartnerCreditPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.SaveOrderPort;
+import com.humberto.b2b.ordermanagement.order.application.port.out.SearchOrdersPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,6 +31,11 @@ class OrderUseCaseConfiguration {
     @Bean
     GetOrderService getOrderService(FindOrderPort findOrderPort) {
         return new GetOrderService(findOrderPort);
+    }
+
+    @Bean
+    SearchOrdersService searchOrdersService(SearchOrdersPort searchOrdersPort) {
+        return new SearchOrdersService(searchOrdersPort);
     }
 
     @Bean
