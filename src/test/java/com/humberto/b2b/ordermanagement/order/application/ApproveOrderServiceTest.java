@@ -8,6 +8,7 @@ import com.humberto.b2b.ordermanagement.order.domain.InvalidOrderTransitionExcep
 import com.humberto.b2b.ordermanagement.order.domain.Order;
 import com.humberto.b2b.ordermanagement.order.domain.OrderItem;
 import com.humberto.b2b.ordermanagement.order.domain.OrderStatus;
+import com.humberto.b2b.ordermanagement.order.domain.OrderStatusChangedEvent;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -32,6 +33,7 @@ class ApproveOrderServiceTest {
 
     private final List<Order> savedOrders = new ArrayList<>();
     private final AtomicBoolean debitAttempted = new AtomicBoolean();
+    private final List<OrderStatusChangedEvent> events = new ArrayList<>();
 
     @Test
     void approvesOrderAfterSuccessfulCreditDebit() {
@@ -51,6 +53,9 @@ class ApproveOrderServiceTest {
         assertEquals(APPROVED_AT, approved.updatedAt());
         assertEquals(OrderStatus.PENDENTE, order.status());
         assertEquals(List.of(approved), savedOrders);
+        assertEquals(1, events.size());
+        assertEquals(OrderStatus.PENDENTE, events.getFirst().previousStatus());
+        assertEquals(OrderStatus.APROVADO, events.getFirst().newStatus());
     }
 
     @Test
@@ -85,6 +90,7 @@ class ApproveOrderServiceTest {
         assertEquals(new BigDecimal("10.00"), exception.availableCredit());
         assertEquals(new BigDecimal("25.00"), exception.requestedAmount());
         assertEquals(List.of(), savedOrders);
+        assertEquals(List.of(), events);
     }
 
     private DebitPartnerCreditPort succeedingDebit() {
@@ -101,7 +107,7 @@ class ApproveOrderServiceTest {
             savedOrders.add(value);
             return value;
         };
-        return new ApproveOrderService(findPort, debitPort, partnerCreditPort, savePort,
+        return new ApproveOrderService(findPort, debitPort, partnerCreditPort, savePort, events::add,
                 Clock.fixed(APPROVED_AT, ZoneOffset.UTC));
     }
 

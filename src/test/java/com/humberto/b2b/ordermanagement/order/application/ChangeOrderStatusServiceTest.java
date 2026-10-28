@@ -6,6 +6,7 @@ import com.humberto.b2b.ordermanagement.order.domain.InvalidOrderTransitionExcep
 import com.humberto.b2b.ordermanagement.order.domain.Order;
 import com.humberto.b2b.ordermanagement.order.domain.OrderItem;
 import com.humberto.b2b.ordermanagement.order.domain.OrderStatus;
+import com.humberto.b2b.ordermanagement.order.domain.OrderStatusChangedEvent;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -26,6 +27,7 @@ class ChangeOrderStatusServiceTest {
     private static final Instant CHANGED_AT = CREATED_AT.plusSeconds(60);
 
     private final List<Order> savedOrders = new ArrayList<>();
+    private final List<OrderStatusChangedEvent> events = new ArrayList<>();
 
     @Test
     void movesApprovedOrderToProcessing() {
@@ -36,6 +38,8 @@ class ChangeOrderStatusServiceTest {
         assertEquals(OrderStatus.EM_PROCESSAMENTO, processing.status());
         assertEquals(CHANGED_AT, processing.updatedAt());
         assertEquals(List.of(processing), savedOrders);
+        assertEquals(OrderStatus.APROVADO, events.getFirst().previousStatus());
+        assertEquals(OrderStatus.EM_PROCESSAMENTO, events.getFirst().newStatus());
     }
 
     @Test
@@ -45,6 +49,7 @@ class ChangeOrderStatusServiceTest {
                     throw new AssertionError("order must not be loaded");
                 },
                 value -> value,
+                events::add,
                 Clock.fixed(CHANGED_AT, ZoneOffset.UTC));
 
         assertThrows(IllegalArgumentException.class, () -> service.changeStatus(UUID.randomUUID(), OrderStatus.APROVADO));
@@ -66,7 +71,7 @@ class ChangeOrderStatusServiceTest {
             savedOrders.add(value);
             return value;
         };
-        return new ChangeOrderStatusService(findPort, savePort, Clock.fixed(CHANGED_AT, ZoneOffset.UTC));
+        return new ChangeOrderStatusService(findPort, savePort, events::add, Clock.fixed(CHANGED_AT, ZoneOffset.UTC));
     }
 
     private static Order createOrder() {

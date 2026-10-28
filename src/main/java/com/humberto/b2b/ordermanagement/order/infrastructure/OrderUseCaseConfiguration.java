@@ -10,6 +10,7 @@ import com.humberto.b2b.ordermanagement.order.application.port.out.DebitPartnerC
 import com.humberto.b2b.ordermanagement.order.application.port.out.FindOrderForUpdatePort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.FindOrderPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.PartnerCreditPort;
+import com.humberto.b2b.ordermanagement.order.application.port.out.RecordOrderStatusChangePort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.RefundPartnerCreditPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.SaveOrderPort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.SearchOrdersPort;
@@ -46,23 +47,27 @@ class OrderUseCaseConfiguration {
                                             DebitPartnerCreditPort debitPartnerCreditPort,
                                             PartnerCreditPort partnerCreditPort,
                                             SaveOrderPort saveOrderPort,
+                                            RecordOrderStatusChangePort recordOrderStatusChangePort,
                                             Clock clock) {
         return new ApproveOrderService(findOrderForUpdatePort, debitPartnerCreditPort, partnerCreditPort,
-                saveOrderPort, clock);
+                saveOrderPort, recordOrderStatusChangePort, clock);
     }
 
     @Bean
     CancelOrderService cancelOrderService(FindOrderForUpdatePort findOrderForUpdatePort,
                                           RefundPartnerCreditPort refundPartnerCreditPort,
                                           SaveOrderPort saveOrderPort,
+                                          RecordOrderStatusChangePort recordOrderStatusChangePort,
                                           Clock clock) {
-        return new CancelOrderService(findOrderForUpdatePort, refundPartnerCreditPort, saveOrderPort, clock);
+        return new CancelOrderService(findOrderForUpdatePort, refundPartnerCreditPort, saveOrderPort,
+                recordOrderStatusChangePort, clock);
     }
 
     @Bean
     ChangeOrderStatusService changeOrderStatusService(FindOrderForUpdatePort findOrderForUpdatePort,
                                                       SaveOrderPort saveOrderPort,
+                                                      RecordOrderStatusChangePort recordOrderStatusChangePort,
                                                       Clock clock) {
-        return new ChangeOrderStatusService(findOrderForUpdatePort, saveOrderPort, clock);
+        return new ChangeOrderStatusService(findOrderForUpdatePort, saveOrderPort, recordOrderStatusChangePort, clock);
     }
 }

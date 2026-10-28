@@ -1,9 +1,11 @@
 package com.humberto.b2b.ordermanagement.order.application;
 
 import com.humberto.b2b.ordermanagement.order.application.port.out.FindOrderForUpdatePort;
+import com.humberto.b2b.ordermanagement.order.application.port.out.RecordOrderStatusChangePort;
 import com.humberto.b2b.ordermanagement.order.application.port.out.SaveOrderPort;
 import com.humberto.b2b.ordermanagement.order.domain.Order;
 import com.humberto.b2b.ordermanagement.order.domain.OrderStatus;
+import com.humberto.b2b.ordermanagement.order.domain.OrderStatusChangedEvent;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -14,13 +16,16 @@ public class ChangeOrderStatusService {
 
     private final FindOrderForUpdatePort findOrderForUpdatePort;
     private final SaveOrderPort saveOrderPort;
+    private final RecordOrderStatusChangePort recordOrderStatusChangePort;
     private final Clock clock;
 
     public ChangeOrderStatusService(FindOrderForUpdatePort findOrderForUpdatePort,
                                     SaveOrderPort saveOrderPort,
+                                    RecordOrderStatusChangePort recordOrderStatusChangePort,
                                     Clock clock) {
         this.findOrderForUpdatePort = findOrderForUpdatePort;
         this.saveOrderPort = saveOrderPort;
+        this.recordOrderStatusChangePort = recordOrderStatusChangePort;
         this.clock = clock;
     }
 
@@ -33,6 +38,8 @@ public class ChangeOrderStatusService {
         }
         Order order = findOrderForUpdatePort.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
-        return saveOrderPort.save(order.transitionTo(newStatus, clock.instant()));
+        Order savedOrder = saveOrderPort.save(order.transitionTo(newStatus, clock.instant()));
+        recordOrderStatusChangePort.record(OrderStatusChangedEvent.between(order, savedOrder));
+        return savedOrder;
     }
 }
