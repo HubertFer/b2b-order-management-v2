@@ -136,6 +136,13 @@ class OrderControllerTest {
     }
 
     @Test
+    void rejectsOrderWhoseTotalDoesNotFitTheDatabase() throws Exception {
+        postOrder(orderJson(insertPartner("100.00", "0"), 1_000_000, "99999999999999999.99"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("total exceeds the maximum supported amount"));
+    }
+
+    @Test
     void rejectsUnknownFieldsNamingTheirPath() throws Exception {
         UUID partnerId = insertPartner("100.00", "0");
 

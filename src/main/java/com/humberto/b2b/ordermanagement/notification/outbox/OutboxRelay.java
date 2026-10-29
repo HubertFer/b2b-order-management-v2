@@ -7,7 +7,6 @@ import org.springframework.transaction.support.TransactionOperations;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 public class OutboxRelay {
@@ -52,17 +51,17 @@ public class OutboxRelay {
     }
 
     private int publishBatch() {
-        List<Long> publishedIds = new ArrayList<>();
-        for (PendingOutboxMessage pending : outboxStore.lockPending(batchSize)) {
-            try {
-                notificationPublisher.publish(pending.message());
-            } catch (RuntimeException exception) {
-                log.warn("Failed to publish outbox event {}, will retry", pending.message().eventId(), exception);
-                break;
-            }
-            publishedIds.add(pending.id());
+        List<PendingOutboxMessage> pending = outboxStore.lockPending(batchSize);
+        int published;
+        try {
+            published = notificationPublisher.publishAll(pending.stream().map(PendingOutboxMessage::message).toList());
+        } catch (PartialPublishException exception) {
+            published = exception.published();
+            log.warn("Failed to publish outbox event {}, will retry", pending.get(published).message().eventId(),
+                    exception.getCause());
         }
-        outboxStore.markPublished(publishedIds, clock.instant());
-        return publishedIds.size();
+        outboxStore.markPublished(pending.subList(0, published).stream().map(PendingOutboxMessage::id).toList(),
+                clock.instant());
+        return published;
     }
 }

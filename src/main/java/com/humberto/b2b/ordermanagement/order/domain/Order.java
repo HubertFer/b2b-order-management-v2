@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public final class Order {
 
+    private static final int MAX_TOTAL_INTEGER_DIGITS = 17;
+
     private final UUID id;
     private final UUID partnerId;
     private final List<OrderItem> items;
@@ -39,6 +41,9 @@ public final class Order {
         BigDecimal total = copiedItems.stream()
                 .map(item -> item.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (total.precision() - total.scale() > MAX_TOTAL_INTEGER_DIGITS) {
+            throw new IllegalArgumentException("total exceeds the maximum supported amount");
+        }
 
         return new Order(UUID.randomUUID(), partnerId, copiedItems, total,
                 OrderStatus.PENDENTE, createdAt, createdAt);

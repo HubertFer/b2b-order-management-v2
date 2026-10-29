@@ -34,6 +34,17 @@ class OrderTest {
     }
 
     @Test
+    void rejectsTotalThatDoesNotFitTheDatabaseColumn() {
+        Instant createdAt = Instant.parse("2026-10-15T12:00:00Z");
+        BigDecimal maxPrice = new BigDecimal("99999999999999999.99");
+
+        assertEquals(maxPrice, Order.create(UUID.randomUUID(),
+                List.of(new OrderItem(UUID.randomUUID(), 1, maxPrice)), createdAt).total());
+        assertThrows(IllegalArgumentException.class, () -> Order.create(UUID.randomUUID(),
+                List.of(new OrderItem(UUID.randomUUID(), 2, maxPrice)), createdAt));
+    }
+
+    @Test
     void createsPendingOrderWithGeneratedIdAndCreationTimestamps() {
         UUID partnerId = UUID.randomUUID();
         Instant createdAt = Instant.parse("2026-10-15T12:00:00Z");
