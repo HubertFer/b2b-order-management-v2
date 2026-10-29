@@ -17,9 +17,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -57,8 +59,8 @@ class KafkaNotificationTest {
 
         verify(partnerNotifier, timeout(30_000))
                 .notifyOrderStatusChanged(eq(orderId), argThat(payload -> payload.replace(" ", "").contains("\"newStatus\":\"APROVADO\"")));
-        assertEquals(0, jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM outbox_event WHERE aggregate_id = ? AND published_at IS NULL", Integer.class, orderId));
+        await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM outbox_event WHERE aggregate_id = ? AND published_at IS NULL", Integer.class, orderId)));
     }
 
     @Test
